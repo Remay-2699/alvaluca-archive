@@ -1,0 +1,751 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>隐士 x 囚徒 · 时间线档案</title>
+  <style>
+    /* ============================================
+       ① 冰雪冷色调 + 信件主题
+       ============================================ */
+    :root {
+      --bg: #eaf3fc;
+      --grid-color: #dbe9f7;
+      --card: rgba(255, 255, 255, 0.9);
+      --ink: #1a2b42;
+      --muted: #6b8aad;
+      --line: #b3cdea;
+      --accent: #5d9bd1;
+      --accent-left: #5d9bd1;
+      --accent-right: #8ba8c7;
+      --flake: #a8c9e8;
+      --track: #e2effa;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background-color: var(--bg);
+      background-image: 
+        linear-gradient(var(--grid-color) 1px, transparent 1px),
+        linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+      background-size: 24px 24px;
+      color: var(--ink);
+      font-family: system-ui, -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+      -webkit-font-smoothing: antialiased;
+      overflow: hidden;
+    }
+
+    /* ② 背景飘雪 */
+    .snow {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      overflow: hidden;
+      pointer-events: none;
+    }
+    .flake {
+      position: absolute;
+      top: -40px;
+      color: var(--flake);
+      line-height: 1;
+      animation: fall linear infinite;
+    }
+    @keyframes fall {
+      to { transform: translate3d(40px, 110vh, 0) rotate(360deg); }
+    }
+
+    /* ③ 锁屏大背景层 */
+    .gate {
+      position: fixed;
+      inset: 0;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(234, 243, 252, 0.85);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      transition: opacity 0.6s ease, visibility 0.6s ease;
+      overflow-y: auto;
+      padding: 20px 10px;
+    }
+
+    .gate.hide {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    /* 上下波浪边 */
+    .gate::before, .gate::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      width: 100%;
+      height: 24px;
+      background: radial-gradient(circle at 12px 12px, transparent 12px, rgba(93, 155, 209, 0.15) 13px) 0 0 / 24px 24px repeat-x;
+      z-index: -1;
+    }
+    .gate::before { top: 0; }
+    .gate::after { bottom: 0; transform: rotate(180deg); }
+
+    /* 信件主容器 */
+    .mail-container {
+      position: relative;
+      width: min(760px, 100%);
+      min-height: min(640px, 90vh);
+      height: auto;
+      background: rgba(255, 255, 255, 0.75);
+      border: 2px solid var(--line);
+      border-radius: 8px;
+      box-shadow: 0 20px 50px rgba(50, 90, 140, 0.15), inset 0 0 0 8px rgba(255,255,255,0.8);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      padding: 30px 20px;
+    }
+
+    .deco-boxes {
+      position: absolute;
+      top: 20px;
+      right: 30px;
+      display: flex;
+      gap: 8px;
+    }
+    .deco-boxes span {
+      display: block;
+      width: 16px;
+      height: 16px;
+      border: 1px solid var(--line);
+      border-radius: 2px;
+    }
+
+    .header-title {
+      text-align: center;
+      margin-top: 10px;
+      z-index: 2;
+    }
+    .header-title h1 {
+      margin: 0;
+      font-size: 38px;
+      font-family: "Arial Rounded MT Bold", "Comic Sans MS", cursive;
+      color: #fff;
+      -webkit-text-stroke: 2px var(--accent);
+      text-shadow: 3px 3px 0 rgba(93, 155, 209, 0.3);
+      letter-spacing: 2px;
+      line-height: 1.1;
+    }
+    .header-title p {
+      margin: 5px 0 0;
+      font-size: 12px;
+      color: var(--muted);
+      letter-spacing: 4px;
+      font-weight: bold;
+    }
+
+    .ribbon {
+      margin: 5px auto 0;
+      width: 60px;
+      height: 36px;
+      position: relative;
+      z-index: 3;
+    }
+    .ribbon::before, .ribbon::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      width: 28px;
+      height: 32px;
+      border: 2px solid var(--accent);
+      background: linear-gradient(135deg, #fff, #dbe9f7);
+      border-radius: 50% 50% 0 50%;
+    }
+    .ribbon::before { left: 2px; transform: rotate(-15deg); }
+    .ribbon::after { right: 2px; transform: rotate(15deg) scaleX(-1); }
+    .ribbon-knot {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 14px;
+      height: 14px;
+      background: #fff;
+      border: 2px solid var(--accent);
+      border-radius: 50%;
+      z-index: 4;
+    }
+
+    /* 照片区 */
+    .cp-photos {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 24px;
+      margin-top: -5px;
+      z-index: 1;
+    }
+
+    .photo-card {
+      width: 140px;
+      height: 170px;
+      background: #fff;
+      border: 2px dashed var(--line);
+      border-radius: 8px;
+      padding: 8px;
+      box-shadow: 0 12px 24px rgba(50, 90, 140, 0.15);
+    }
+
+    .photo-card img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 4px;
+      background: #eaf3fc;
+    }
+
+    .photo-card.left { transform: rotate(-6deg) translateY(-8px); }
+    .photo-card.right { transform: rotate(6deg) translateY(8px); }
+
+    /* 名字 */
+    .names {
+      text-align: center;
+      font-size: 18px;
+      margin-top: 10px;
+      color: var(--accent);
+      letter-spacing: 1px;
+      font-family: "Georgia", serif;
+    }
+
+    /* 阅读须知 */
+    .notice-text {
+      text-align: center;
+      font-size: 13px;
+      color: var(--ink);
+      line-height: 1.8;
+      margin: 15px 0;
+      background: rgba(255, 255, 255, 0.6);
+      padding: 10px 20px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+    }
+    .notice-text p { margin: 2px 0; }
+    .notice-text .highlight { color: var(--accent); font-weight: bold; }
+
+    /* 滑动解锁 */
+    .unlock-track {
+      position: relative;
+      width: 260px;
+      height: 48px;
+      margin: 10px auto 0;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: var(--track);
+      overflow: hidden;
+      transition: border-color 0.3s ease, box-shadow 0.3s ease;
+      flex-shrink: 0;
+    }
+
+    .unlock-track.unlocked {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(93, 155, 209, 0.15);
+    }
+
+    .unlock-label {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--muted);
+      font-size: 12px;
+      letter-spacing: 2px;
+      pointer-events: none;
+    }
+
+    .unlock-thumb {
+      position: absolute;
+      top: 4px;
+      left: 4px;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 4px 12px rgba(60, 110, 170, 0.2);
+      font-size: 18px;
+      cursor: grab;
+      touch-action: none;
+      user-select: none;
+    }
+    .unlock-thumb:active { cursor: grabbing; }
+
+    /* 制作者信息 */
+    .maker-info {
+      text-align: center;
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.6;
+      margin-top: 15px;
+    }
+
+    .postal-stamp {
+      position: absolute;
+      bottom: 20px;
+      left: 30px;
+      border: 2px solid var(--line);
+      padding: 6px 12px;
+      color: var(--line);
+      font-family: "Courier New", monospace;
+      font-weight: bold;
+      font-size: 14px;
+      transform: rotate(-10deg);
+      letter-spacing: 2px;
+      border-radius: 4px;
+      opacity: 0.8;
+    }
+    .postal-stamp::after {
+      content: "";
+      position: absolute;
+      top: 50%;
+      left: 100%;
+      width: 40px;
+      height: 20px;
+      background: repeating-linear-gradient(0deg, transparent, transparent 3px, var(--line) 3px, var(--line) 5px);
+      transform: translateY(-50%);
+      opacity: 0.5;
+    }
+
+    @media (max-width: 600px) {
+      .mail-container { padding: 20px 15px; min-height: 95vh; }
+      .gate::before, .gate::after { display: none; }
+      .header-title h1 { font-size: 32px; }
+      .cp-photos { gap: 12px; }
+      .photo-card { width: 115px; height: 150px; }
+      .photo-card.left { transform: rotate(-5deg) translateY(-6px); }
+      .photo-card.right { transform: rotate(5deg) translateY(6px); }
+      .names { font-size: 15px; }
+      .postal-stamp { bottom: 10px; left: 10px; font-size: 12px; }
+      .notice-text { font-size: 12px; padding: 8px 12px; }
+      .maker-info { font-size: 11px; }
+    }
+
+    /* ============================================
+       ④ 时间线主体
+       ============================================ */
+    .app {
+      position: relative;
+      z-index: 1;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 64px 24px 80px;
+      opacity: 0;
+      transform: translateY(14px);
+      transition: opacity 0.7s ease, transform 0.7s ease;
+    }
+    .app[hidden] { display: none !important; }
+    .app.show { opacity: 1; transform: none; }
+
+    .hero { text-align: center; margin-bottom: 48px; }
+    .hero h1 { font-size: clamp(32px, 6vw, 50px); margin: 8px 0; }
+    .hero p { color: var(--muted); line-height: 1.8; }
+
+    .timeline-container {
+      position: relative;
+      padding: 20px 0;
+    }
+    /* 中间时间线 */
+    .timeline-container::before {
+      content: "";
+      position: absolute;
+      top: 0; bottom: 0; left: 50%;
+      width: 2px;
+      background: var(--line);
+      transform: translateX(-50%);
+    }
+
+    .timeline-item {
+      position: relative;
+      width: 50%;
+      padding: 0 40px;
+      box-sizing: border-box;
+      margin-bottom: 40px;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: all 0.6s ease;
+    }
+    .timeline-item.visible { opacity: 1; transform: none; }
+
+    .timeline-item.left {
+      left: 0;
+      text-align: right;
+    }
+    .timeline-item.right {
+      left: 50%;
+      text-align: left;
+    }
+
+    /* 中心圆点 */
+    .timeline-item::after {
+      content: "";
+      position: absolute;
+      top: 24px;
+      width: 14px; height: 14px;
+      border-radius: 50%;
+      background: var(--bg);
+      border: 3px solid var(--accent);
+      z-index: 1;
+    }
+    .timeline-item.left::after { right: -7px; }
+    .timeline-item.right::after { left: -7px; }
+
+    /* 卡片 */
+    .timeline-card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 8px 24px rgba(50, 90, 140, 0.08);
+      position: relative;
+      word-break: break-word; /* 防止长文本撑破 */
+    }
+    .timeline-item.left .timeline-card { border-right: 4px solid var(--accent-left); }
+    .timeline-item.right .timeline-card { border-left: 4px solid var(--accent-right); }
+
+    .date {
+      font-size: 13px;
+      color: var(--muted);
+      font-weight: bold;
+      margin-bottom: 6px;
+      letter-spacing: 0.05em;
+    }
+    .timeline-card h2 {
+      margin: 0 0 10px;
+      font-size: 18px;
+      color: var(--ink);
+    }
+    
+    .quote {
+      font-size: 15px;
+      font-weight: bold;
+      color: var(--accent);
+      margin-bottom: 8px;
+      line-height: 1.6;
+    }
+
+    .content {
+      margin: 0 0 12px;
+      font-size: 14px;
+      line-height: 1.7;
+      color: var(--ink);
+      opacity: 0.85;
+    }
+
+    .tag {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      background: rgba(93, 155, 209, 0.1);
+      color: var(--accent);
+      border: 1px solid rgba(93, 155, 209, 0.2);
+    }
+
+    /* ============================================
+       重点修改：手机端强制保留双列排版！
+       ============================================ */
+    @media (max-width: 768px) {
+      .app { padding: 40px 10px 60px; }
+      
+      .timeline-container::before {
+        left: 50%; /* 轴线依然居中 */
+      }
+      
+      .timeline-item {
+        width: 50%;
+        padding: 0 6px; /* 极限压缩左右间距，从 40px 缩到 6px */
+        margin-bottom: 20px;
+      }
+      
+      .timeline-item.left { left: 0; text-align: right; }
+      .timeline-item.right { left: 50%; text-align: left; }
+      
+      .timeline-item::after {
+        top: 15px; 
+        width: 10px; 
+        height: 10px; 
+        border-width: 2px;
+      }
+      .timeline-item.left::after { right: -5px; }
+      .timeline-item.right::after { left: -5px; }
+
+      /* 压缩卡片内边距和字体 */
+      .timeline-card {
+        padding: 10px;
+        border-radius: 8px;
+      }
+      .timeline-item.left .timeline-card { border-right-width: 3px; }
+      .timeline-item.right .timeline-card { border-left-width: 3px; }
+      
+      .date { font-size: 10px; margin-bottom: 4px; }
+      .timeline-card h2 { font-size: 13px; margin-bottom: 6px; line-height: 1.3; }
+      .quote { font-size: 11px; margin-bottom: 6px; line-height: 1.4; }
+      .content { font-size: 11px; line-height: 1.5; margin-bottom: 8px; opacity: 0.9; }
+      .tag { font-size: 9px; padding: 2px 6px; }
+    }
+
+    .footer {
+      margin-top: 56px; padding-top: 20px; border-top: 1px solid var(--line);
+      color: var(--muted); font-size: 13px; line-height: 1.8; text-align: center;
+    }
+
+    /* BGM 按钮 */
+    .bgm-toggle {
+      position: fixed; right: 20px; bottom: 20px; z-index: 20; display: none;
+      align-items: center; justify-content: center; width: 46px; height: 46px;
+      border: 1px solid var(--line); border-radius: 50%; background: var(--card);
+      color: var(--ink); font-size: 20px; cursor: pointer; box-shadow: 0 8px 24px rgba(50, 90, 140, 0.2);
+      backdrop-filter: blur(8px);
+    }
+    .bgm-toggle.show { display: flex; }
+  </style>
+</head>
+<body>
+
+  <div class="snow" id="snow" aria-hidden="true"></div>
+
+  <!-- 锁屏信件区 -->
+  <div class="gate" id="gate">
+    <div class="mail-container">
+      
+      <div class="deco-boxes">
+        <span></span><span></span><span></span>
+      </div>
+
+      <div class="postal-stamp">
+        POSTAL<br>STAMP
+      </div>
+
+      <div class="header-title">
+        <h1>Love Mail</h1>
+        <p>雪 色 来 信</p>
+      </div>
+
+      <div class="ribbon">
+        <div class="ribbon-knot"></div>
+      </div>
+
+      <!-- ⚠️ 注意这里：如果你上传的是 jpg，请把下面的 .png 改成 .jpg -->
+      <div class="cp-photos">
+        <div class="photo-card left">
+          <img src="./A.jpg" alt="A" />
+        </div>
+        <div class="photo-card right">
+          <img src="./L.jpg" alt="L" />
+        </div>
+      </div>
+
+      <div class="names">
+        𝓐𝓵𝓿𝓪 𝓛𝓸𝓻𝓮𝓷𝔃 · 𝓛𝓾𝓬𝓪 𝓑𝓪𝓵𝓼𝓪
+      </div>
+
+      <div class="notice-text">
+        <p>阅读须知：</p>
+        <p>本页面属性：</p>
+        <p class="highlight">隐士x“囚徒”不拆不逆</p>
+      </div>
+
+      <div class="unlock-track" id="unlockTrack">
+        <span class="unlock-label" id="unlockLabel">智慧的共振</span>
+        <div class="unlock-thumb" id="unlockThumb" role="slider" tabindex="0" aria-label="滑动解锁">❄️</div>
+      </div>
+
+      <div class="maker-info">
+        <p>Made By：Yakiri Hanami/麦当当吉士蛋堡</p>
+        <p>加班烹制中.....</p>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- 时间线主体 -->
+  <main class="app" id="app" hidden>
+    <header class="hero">
+      <p style="color: var(--accent); font-size: 12px; letter-spacing: 0.2em; text-transform: uppercase;">CP ARCHIVE</p>
+      <h1>𝓐𝓵𝓿𝓪 𝓛𝓸𝓻𝓮𝓷𝔃 · 𝓛𝓾𝓬𝓪 𝓑𝓪𝓵𝓼𝓪</h1>
+      <p>记录他们从相遇到现在的每一个节点。向下滚动查看，音乐会自动循环播放。</p>
+    </header>
+
+    <div class="timeline-container" id="timeline"></div>
+
+    <footer class="footer">
+      持续开发中
+    </footer>
+  </main>
+
+  <audio id="bgm" src="./bgm.mp3" loop preload="auto"></audio>
+  <button id="bgmToggle" class="bgm-toggle" type="button">🤍</button>
+
+  <script>
+    // 时间线数据
+    const events = [
+      { date: "2020-03-19", type: "角色上线", target: "“囚徒”", title: "上线时间", text: "卢卡深受大发明家器重，很多人都看好他继承大发明家的衣钵，然而一切在一场学术争端后戛然而止。" },
+      { date: "2021-07-10", type: "生日文案", target: "“囚徒”", title: "生日", text: "感谢您于百忙之中阅读我的自荐信，期盼能成为您的学生。" },
+      { date: "2022-07-10", type: "生日文案", target: "“囚徒”", title: "生日", text: "今天之前会因为“小洛伦兹”这个称号而自得的我真是蠢透了。" },
+      { date: "2022-08-25", type: "角色上线", target: "隐士", title: "上线时间", text: "“他和庄园里的某位角色存在千丝万缕的关联。”\n多年过去，阿尔瓦成为了城里有名的发明家，甚至有了一个诚挚勤勉的爱徒。而正当他打算把一切倾囊相授时，却遭到了爱徒的指责和背叛。" },
+      { date: "2022-09-01", type: "修复公告", target: "“囚徒”", title: "修复公告", text: "修复了“囚徒”在对局中可能会多次触发专属成就的问题；\n修复了“囚徒”时装-冬蝉使用魔术棒、怀表等技能道具时表现异常的问题；" },
+      { date: "2023-02-16", type: "修复公告", target: "“囚徒”/隐士", title: "修复公告", text: "修复了在“囚徒”跟隐士的对局中，大门进度可能会出现回退的问题" },
+      { date: "2023-06-29", type: "修复公告", target: "“囚徒”/隐士", title: "修复公告", text: "修复了同时存在隐士和“囚徒”的对局中，密码机进度异常的问题；" },
+      { date: "2023-07-10", type: "生日文案", target: "“囚徒”", title: "生日", text: "“能量的传播，需要通过碰撞实现。”\n以10-0-2为代表的实验用例，表现出一种接近未教化的稚子般的残酷和莽撞。" },
+      { date: "2024-02-07", type: "限时奇珍时装", target: "“囚徒”", title: "毕业日", text: "或许，只有当脱下那身学袍之时，他才会发现，奔向真理的道路，并不是永远都是风雨满途。" },
+      { date: "2024-03-07", type: "系统优化", target: "“囚徒”/隐士", title: "即时快捷发言新增“对侧大门已开启！”", text: "即时快捷发言新增了“对侧大门已开启！”，当求生者通过“囚徒”或隐士的连接通路破译打开对侧的大门时将会自动弹出，发送后的小地图图标会指向发送者的方向；" },
+      { date: "2024-04-03", type: "限时奇珍时装", target: "隐士", title: "升学礼", text: "不可言说的神意将故人之子引领到他的身边，而他将为此倾其所有，再不会重蹈过去的遗憾。" },
+      { date: "2024-04-20", type: "日期文案", target: "隐士", title: "2024年4月20日", text: "“渺小的微粒，足以构成庞大、喧嚣、变幻莫测的世界。”\n在变换的空间与时间中，人终会再次找到内心的希望与安宁。我仍愿意我继续我的科学探索，但这次，我会更加谨慎地选择我的方向，避免重蹈覆辙。" },
+      { date: "2024-07-10", type: "生日文案", target: "“囚徒”", title: "生日", text: "“每一场试验，都有不同的校验标准。”\n我感到他的视线就这样意味深长地停留在我的面前，又不动声色地移开了。" },
+      { date: "2024-10-17", type: "修复公告", target: "“囚徒”/隐士", title: "修复公告", text: "修复了“囚徒”与隐士对局，开门进度条会跳变的问题；\n修复了“囚徒”角色日个性动作“传导”音效缺失的问题；" },
+      { date: "2025-04-20", type: "日期文案", target: "隐士", title: "2025年4月20日", text: "“吸引，来源于彼此的不同。”\n在调查的过程中，我在其中一所靠近小镇的墓园里，见到了属于阿尔瓦大人的墓碑。墓石上没有墓志铭，也没有枯朽的落叶，只有一层轻薄的灰。" },
+      { date: "2025-07-10", type: "生日文案", target: "“囚徒”", title: "生日", text: "“短暂，危险，耀眼如太阳的幻觉。 ”\n卢卡·巴尔萨，一枚理想世界的齿轮，自少年时的第一场变故之后，就未有一刻得以运转在真空中。" },
+      { date: "2025-07-10", type: "时装上线", target: "隐士", title: "薄金", text: "隐士“薄金”上线" },
+      { date: "2025-08-28", type: "修复公告", target: "“囚徒”/隐士", title: "修复公告", text: "修复了“囚徒”破译被隐士连接的逃生门时开启传输后破译速度异常的问题。" },
+      { date: "2026-04-20", type: "日期文案", target: "隐士", title: "2026年4月20日", text: "“所有理论都来源于天马行空的梦，而我们的使命是将它证实。”\n或许是因为留给闯入者的时间不多，散落的资料中有许多被跳过。除了关于越狱案的部分，阿尔瓦大人在漆黑之眼的庇佑下进行研究的手稿，似乎也招致了额外的关注。" },
+      { date: "2026-07-10", type: "生日文案", target: "“囚徒”", title: "生日", text: "“你只是需要一个契机。”\n一切征兆在遥远的往日早已清晰可见，并在接下来的数年里不曾被磨损。或许卢卡·巴尔萨从不需要这样一条通往物理学研究的捷径。撕毁入学通知的行为佐证着这个年轻人当时所怀有的信念：他选择物理学，不是因为这能通向某种廉价的特权，而是因为在母亲口中，知识，这件事本身就拥有着崇高而无限的价值。" }
+    ];
+
+    const timelineContainer = document.getElementById("timeline");
+    let leftToggle = true; 
+
+    timelineContainer.innerHTML = events.map((event) => {
+      let position = "";
+      if (event.target === "隐士") {
+        position = "left";
+      } else if (event.target === "“囚徒”") {
+        position = "right";
+      } else {
+        position = leftToggle ? "left" : "right";
+        leftToggle = !leftToggle;
+      }
+
+      let quoteHtml = "";
+      let contentHtml = "";
+      
+      if (event.text.includes('\n')) {
+        const parts = event.text.split('\n');
+        quoteHtml = `<div class="quote">${parts[0]}</div>`;
+        contentHtml = parts.slice(1).join('<br>');
+      } else {
+        contentHtml = event.text;
+      }
+
+      return `
+        <div class="timeline-item ${position}">
+          <div class="timeline-card">
+            <div class="date">${event.date}</div>
+            <h2>${event.title}</h2>
+            ${quoteHtml}
+            <div class="content">${contentHtml}</div>
+            <span class="tag">${event.type}</span>
+          </div>
+        </div>
+      `;
+    }).join("");
+
+    // 生成飘雪
+    (function createSnow() {
+      const snow = document.getElementById("snow");
+      const frag = document.createDocumentFragment();
+      for (let i = 0; i < 40; i++) {
+        const flake = document.createElement("span");
+        flake.className = "flake";
+        flake.textContent = "❄";
+        flake.style.left = (Math.random() * 100).toFixed(2) + "%";
+        flake.style.fontSize = (10 + Math.random() * 16).toFixed(1) + "px";
+        flake.style.animationDuration = (8 + Math.random() * 10).toFixed(1) + "s";
+        flake.style.animationDelay = (-Math.random() * 20).toFixed(1) + "s";
+        flake.style.opacity = (0.2 + Math.random() * 0.5).toFixed(2);
+        frag.appendChild(flake);
+      }
+      snow.appendChild(frag);
+    })();
+
+    // 滚动渐显
+    function observeReveals() {
+      const io = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) { entry.target.classList.add("visible"); io.unobserve(entry.target); }
+        });
+      }, { threshold: 0.12 });
+      document.querySelectorAll(".timeline-item").forEach(el => io.observe(el));
+    }
+
+    // 滑键与BGM逻辑
+    const track = document.getElementById("unlockTrack");
+    const thumb = document.getElementById("unlockThumb");
+    const label = document.getElementById("unlockLabel");
+    const gate = document.getElementById("gate");
+    const app = document.getElementById("app");
+    const bgm = document.getElementById("bgm");
+    const bgmToggle = document.getElementById("bgmToggle");
+
+    let maxX = 0, currentX = 0, startPointerX = 0, dragging = false, unlocked = false;
+    const THUMB_MARGIN = 4, UNLOCK_RATIO = 0.85;
+
+    function measure() { maxX = Math.max(0, track.clientWidth - thumb.offsetWidth - THUMB_MARGIN * 2); }
+    function setX(x) {
+      currentX = Math.max(0, Math.min(x, maxX));
+      thumb.style.transform = `translateX(${currentX}px)`;
+    }
+    function resetThumb() { if (!unlocked) setX(0); }
+    
+    function unlockAndEnter() {
+      if (unlocked) return;
+      unlocked = true;
+      measure(); setX(maxX);
+      track.classList.add("unlocked");
+      label.textContent = "需要相似的灵魂。";
+      
+      bgm.volume = 0.6;
+      bgm.play().catch(() => {});
+      bgmToggle.classList.add("show");
+
+      setTimeout(() => {
+        gate.classList.add("hide");
+        app.hidden = false;
+        requestAnimationFrame(() => app.classList.add("show"));
+        document.body.style.overflow = "auto";
+        observeReveals();
+        setTimeout(() => gate.style.display = "none", 600);
+      }, 400);
+    }
+
+    measure(); setX(0);
+    window.addEventListener("resize", () => { measure(); setX(unlocked ? maxX : currentX); });
+
+    thumb.addEventListener("pointerdown", (e) => {
+      if (unlocked) return;
+      dragging = true;
+      startPointerX = e.clientX - currentX;
+      thumb.setPointerCapture(e.pointerId);
+    });
+    thumb.addEventListener("pointermove", (e) => {
+      if (!dragging || unlocked) return;
+      setX(e.clientX - startPointerX);
+    });
+    thumb.addEventListener("pointerup", () => {
+      if (!dragging) return;
+      dragging = false;
+      if (currentX >= maxX * UNLOCK_RATIO) unlockAndEnter();
+      else resetThumb();
+    });
+    
+    bgmToggle.addEventListener("click", () => {
+      if (bgm.paused) { bgm.play(); }
+      else { bgm.pause(); }
+    });
+  </script>
+</body>
+</html>
